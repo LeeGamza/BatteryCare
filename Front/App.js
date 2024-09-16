@@ -9,16 +9,25 @@ export default function App() {
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: () => true,
         onPanResponderMove: (evt, gestureState) => {
-          if (gestureState.dx > 0) {  // 오른쪽으로만 스와이프
+          if (gestureState.dx > 0) {
             Animated.spring(position, {
-              toValue: { x: gestureState.dx, y: 304 },  // x값을 스와이프한 만큼 변경
+              toValue: { x: gestureState.dx, y: 304 },
               useNativeDriver: false,
             }).start();
           }
         },
-        onPanResponderRelease: () => {
-          // 스와이프가 끝나면 할 행동
-          console.log('스와이프 완료');
+        onPanResponderRelease: (evt, gestureState) => {
+          if(gestureState.dx < 290) {
+            Animated.spring(position, {
+              toValue: { x: 0, y: 304 },
+              useNativeDriver: false,
+            }).start();
+          } else {
+            Animated.spring(position, {
+              toValue: { x: 290, y: 304},
+              useNativeDriver: false,
+            }).start();
+          }
         },
       })
   ).current;
@@ -138,7 +147,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   mainText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 'bold',
     color: '#000',
     textAlign: 'center',
