@@ -119,6 +119,22 @@ export default function App() {
               <Image source={require('./Image/Front-Delete.png')} style={styles.imageSize} />
             </Animated.View>
 
+          <View style={styles.roundedBoxThird}>
+            <Text style={styles.tempText}>
+              현재 배터리 온도 : 27°C
+            </Text>
+            <Text style={styles.subText}>
+              쾌적합니다! 배터리 수명에 영향을 끼치지 않습니다.
+            </Text>
+          </View>
+
+          <View style={styles.roundedBoxFour}>
+            <Text style={[styles.mainText, { textAlign: 'left', width: '100%', paddingLeft: 20,
+              fontSize: 18 }]}>
+              최적화된 배터리 충전
+            </Text>
+          </View>
+
           <StatusBar style="auto" />
         </View>
       </ImageBackground>
@@ -197,6 +213,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 3,
   },
+  roundedBoxThird: {
+    width: 360,
+    height: 56,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    position: 'absolute',
+    left: 16,
+    top: 480,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+  },
+  roundedBoxFour: {
+    width: 360,
+    height: 36,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    position: 'absolute',
+    left: 16,
+    top: 550,
+    borderWidth: 3,
+  },
   textInsideBox: {
     color: '#000',
     fontSize: 24,
@@ -209,9 +247,21 @@ const styles = StyleSheet.create({
     color: '#000',
     textAlign: 'center',
   },
+  leftAlignedText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#000',
+    textAlign: 'left', // 좌측 정렬
+  },
   subText: {
     fontSize: 12,
     color: '#000',
     textAlign: 'center',
   },
+  tempText: {
+    fontSize: 16,
+    color: '#4797D2',
+    textAlign: 'center',
+    fontWeight: 'bold',
+  }
 });
