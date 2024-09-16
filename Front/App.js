@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, ImageBackground, Image, Animated, PanResponder } from 'react-native';
 
 export default function App() {
-  const [position] = useState(new Animated.ValueXY({ x: 0, y: 304 })); // 초기 좌표
+  const [position] = useState(new Animated.ValueXY({ x: 0, y: 304 }));
   const panResponder = useRef(
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
@@ -25,6 +25,35 @@ export default function App() {
           } else {
             Animated.spring(position, {
               toValue: { x: 290, y: 304},
+              useNativeDriver: false,
+            }).start();
+          }
+        },
+      })
+  ).current;
+
+  const [position2] = useState(new Animated.ValueXY({ x: 0, y: 390 }));
+  const panResponder2 = useRef(
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderMove: (evt, gestureState) => {
+          if (gestureState.dx > 0) {
+            Animated.spring(position2, {
+              toValue: { x: gestureState.dx, y: 390 },
+              useNativeDriver: false,
+            }).start();
+          }
+        },
+        onPanResponderRelease: (evt, gestureState) => {
+          if (gestureState.dx < 290) {
+            Animated.spring(position2, {
+              toValue: { x: 0, y: 390 },
+              useNativeDriver: false,
+            }).start();
+          } else {
+            Animated.spring(position2, {
+              toValue: { x: 290, y: 390 },
               useNativeDriver: false,
             }).start();
           }
@@ -65,14 +94,31 @@ export default function App() {
           </View>
 
           <Animated.View
-              style={[styles.positionedImage, position.getLayout()]}  // 이미지 위치 변경 적용
-              {...panResponder.panHandlers}  // PanResponder 핸들러 적용
+              style={[styles.positionedImage, position.getLayout()]}
+              {...panResponder.panHandlers}
           >
             <Image
-                source={require('./Image/Front-RAM.png')}  // 삽입할 이미지 경로
-                style={styles.imageSize}  // 이미지 크기 설정
+                source={require('./Image/Front-RAM.png')}
+                style={styles.imageSize}
             />
           </Animated.View>
+
+          <View style={styles.ovalShapeSecond}>
+            <Text style={styles.mainText}>
+              휴대폰의 불필요한 파일을 제거합니다.
+            </Text>
+            <Text style={styles.subText}>
+              밀어서 시작하세요!
+            </Text>
+          </View>
+
+            <Animated.View
+                style={[styles.positionedImage, position2.getLayout()]}
+                {...panResponder2.panHandlers}
+            >
+              <Image source={require('./Image/Front-Delete.png')} style={styles.imageSize} />
+            </Animated.View>
+
           <StatusBar style="auto" />
         </View>
       </ImageBackground>
@@ -105,15 +151,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: -120,
     borderWidth: 3,
-    zIndex: 1,
+  },
+  ovalShapeSecond: {
+    width: 364,
+    height: 75,
+    backgroundColor: '#C04F15',
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    left: 15,
+    top: 390,
+    borderWidth: 3,
   },
   positionedImage: {
-    position: 'absolute',  // 이미지 절대 위치
-    top: 296,  // y 좌표
+    position: 'absolute',
+    top: 296,
   },
   imageSize: {
-    width: 100,  // 너비
-    height: 85,  // 높이
+    width: 100,
+    height: 85,
     left: 4,
   },
   roundedBox: {
