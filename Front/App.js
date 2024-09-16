@@ -9,7 +9,10 @@ export default function App() {
           resizeMode="cover"
       >
         <View style={styles.container}>
-          <Image source={require('./Image/BatteryCare-Logo.png')} style={styles.logo} />
+          <Image
+              source={require('./Image/BatteryCare-Logo.png')}
+              style={styles.logo}
+          />
           <View style={styles.roundedBox}>
             <Text style={styles.textInsideBox}>
               잔량🔋:100%
@@ -19,6 +22,15 @@ export default function App() {
           <View style={styles.roundedBoxSecond}>
             <Text style={styles.textInsideBox}>
               전력⚡:18.75
+            </Text>
+          </View>
+
+          <View style={styles.ovalShape}>
+            <Text style={styles.mainText}>
+              사용자의 휴대폰 RAM을 최적화 합니다.
+            </Text>
+            <Text style={styles.subText}>
+              밀어서 시작하세요!
             </Text>
           </View>
 
@@ -44,6 +56,17 @@ const styles = StyleSheet.create({
     left: 28,
     top: 24,
     marginLeft: -5,
+  },
+  ovalShape: {
+    width: 364,  // 너비
+    height: 75,  // 높이
+    backgroundColor: '#7030A0',  // 원하는 색상
+    borderRadius: 50,  // 높이보다 크게 설정하면 타원 모양이 됨
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: -120,
+    borderWidth: 3,  // 테두리 두께
+    zIndex: 1,
   },
   roundedBox: {
     width: 186,
@@ -73,6 +96,17 @@ const styles = StyleSheet.create({
     color: '#000',  // 텍스트 색상 (필요시 수정 가능)
     fontSize: 24,
     fontWeight: '700',
+    textAlign: 'center',
+  },
+  mainText: {
+    fontSize: 14,       // 14pt로 설정
+    fontWeight: 'bold', // 굵게 설정
+    color: '#000',      // 텍스트 색상
+    textAlign: 'center',
+  },
+  subText: {
+    fontSize: 12,       // 12pt로 설정
+    color: '#000',      // 텍스트 색상
     textAlign: 'center',
   },
 });
