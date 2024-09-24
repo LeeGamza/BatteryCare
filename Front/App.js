@@ -74,7 +74,7 @@ export default function App() {
           />
           <View style={styles.roundedBox}>
             <Text style={styles.textInsideBox}>
-              잔량🔋:100%
+              잔량🔋:98%
             </Text>
           </View>
 
@@ -98,7 +98,7 @@ export default function App() {
               {...panResponder.panHandlers}
           >
             <Image
-                source={require('./Image/Front-RAM.png')}
+                source={require('./Image/Front-Ram.png')}
                 style={styles.imageSize}
             />
           </Animated.View>
