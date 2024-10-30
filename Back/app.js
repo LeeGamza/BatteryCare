@@ -12,7 +12,6 @@ app.use(cors()); // CORS 설정
 
 // MongoDB 연결 설정
 mongoose.connect('mongodb+srv://admin:admin@cluster0.6m1uhwl.mongodb.net/', {
-  // useNewUrlParser와 useUnifiedTopology 옵션 제거
 }).then(() => {
   console.log("MongoDB connected");
   startBluetooth(); // Bluetooth 수신 시작
