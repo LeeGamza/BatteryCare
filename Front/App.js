@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, ImageBackground, Image, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, ImageBackground, Image, Switch, TouchableOpacity, Dimensions } from 'react-native';
 
-const { width, height } = Dimensions.get('window'); // 화면의 너비와 높이 가져오기
+const { width, height } = Dimensions.get('window');
 
 export default function App() {
+  const [isRelayEnabled, setIsRelayEnabled] = useState(false);
+  const toggleSwitch = () => setIsRelayEnabled(previousState => !previousState);
+
   return (
       <ImageBackground
           source={require('./Image/BatteryCare-BackGround.png')}
@@ -43,6 +46,27 @@ export default function App() {
             </View>
           </View>
 
+          {/* 프리릴레이 스위치 */}
+          <View style={styles.relaySwitchContainer}>
+            <Text style={styles.relaySwitchText}>프리릴레이</Text>
+            <Switch
+                trackColor={{ false: "#767577", true: "#92D050" }}
+                thumbColor={isRelayEnabled ? "#FFFFFF" : "#f4f3f4"}
+                onValueChange={toggleSwitch}
+                value={isRelayEnabled}
+            />
+          </View>
+
+          {/* 릴레이 + / - 버튼들 */}
+          <View style={styles.relayButtonsContainer}>
+            <TouchableOpacity style={styles.relayButton}>
+              <Text style={styles.buttonText}>+ 릴레이</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.relayButton}>
+              <Text style={styles.buttonText}>- 릴레이</Text>
+            </TouchableOpacity>
+          </View>
+
           <StatusBar style="auto" />
         </View>
       </ImageBackground>
@@ -59,32 +83,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    width: width * 0.8,      // 화면 너비의 80%
-    height: height * 0.16,   // 화면 높이의 15%
+    width: width * 0.8,
+    height: height * 0.16,
     position: 'absolute',
-    left: width * 0.1,       // 화면 너비의 10%에 위치
-    top: height * 0.035,      // 화면 높이의 5%에 위치
+    left: width * 0.1,
+    top: height * 0.035,
   },
   roundedBoxGreen: {
-    width: width * 0.45,  // 화면 너비의 45%
-    height: height * 0.08, // 화면 높이의 8%
+    width: width * 0.45,
+    height: height * 0.08,
     backgroundColor: '#92D050',
     borderRadius: 10,
     position: 'absolute',
     left: width * 0.02,
-    top: height * 0.25,    // 화면 높이의 30% 위치
+    top: height * 0.25,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
   },
   roundedBoxYellow: {
-    width: width * 0.45,  // 화면 너비의 45%
-    height: height * 0.08, // 화면 높이의 8%
+    width: width * 0.45,
+    height: height * 0.08,
     backgroundColor: '#FFC000',
     borderRadius: 10,
     position: 'absolute',
-    left: width * 0.53,   // 화면 너비의 53% 위치
-    top: height * 0.25,    // 화면 높이의 30% 위치
+    left: width * 0.53,
+    top: height * 0.25,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
@@ -95,7 +119,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '95%',
     position: 'absolute',
-    top: height * 0.35,    // Green과 Yellow 박스 아래에 위치
+    top: height * 0.35,
     left: width * 0.02,
   },
   cellBox: {
@@ -114,11 +138,54 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
   },
-
   textInsideBox: {
     color: '#000',
     fontSize: 17,
     fontWeight: '700',
     textAlign: 'center',
+  },
+  relaySwitchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#333',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 1,
+    backgroundColor: '#FFFFFF',
+    width: width * 0.95,
+    height: height * 0.05,
+    marginTop: 22,
+    position: 'absolute',
+    top: height * 0.5,
+
+  },
+  relaySwitchText: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333',
+  },
+  relayButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: width * 0.9,
+    marginTop: 10,
+    position: 'absolute',
+    top: height * 0.6,
+  },
+  relayButton: {
+    flex: 1,
+    marginHorizontal: 5,
+    backgroundColor: '#C0C0C0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
   },
 });
