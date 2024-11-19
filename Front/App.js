@@ -1,12 +1,36 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, ImageBackground, Image, Switch, TouchableOpacity, Dimensions } from 'react-native';
+import axios from 'axios';
 
 const { width, height } = Dimensions.get('window');
 
 export default function App() {
   const [isRelayEnabled, setIsRelayEnabled] = useState(false);
+  const [packVoltage, setPackVoltage] = useState("0");
+  const [current, setCurrent] = useState("0");
+  const [cellVoltages, setCellVoltages] = useState(["0", "0", "0", "0"]);
+
   const toggleSwitch = () => setIsRelayEnabled(previousState => !previousState);
+
+  // useEffect를 사용해 데이터 가져오기
+  useEffect(() => {
+    axios.get('http://your-backend-url.com/api/device-data')
+        .then(response => {
+          const data = response.data;
+          setPackVoltage(data.packVoltage); // 팩 전압
+          setCurrent(data.current); // 전류
+          setCellVoltages([
+            data.cell1Voltage,
+            data.cell2Voltage,
+            data.cell3Voltage,
+            data.cell4Voltage
+          ]); // 셀 전압들
+        })
+        .catch(error => {
+          console.error('Error fetching data:', error);
+        });
+  }, []);
 
   return (
       <ImageBackground
@@ -15,7 +39,6 @@ export default function App() {
           resizeMode="cover"
       >
         <View style={styles.container}>
-
           {/* 로고 */}
           <Image
               source={require('./Image/BatteryCare-Logo.png')}
@@ -24,26 +47,19 @@ export default function App() {
 
           {/* 팩 전압과 전류 박스 */}
           <View style={styles.roundedBoxGreen}>
-            <Text style={styles.textGRInsideBox}>팩 전압⚡: 18.32V</Text>
+            <Text style={styles.textGRInsideBox}>팩 전압⚡: {packVoltage}V</Text>
           </View>
           <View style={styles.roundedBoxYellow}>
-            <Text style={styles.textGRInsideBox}>전류⚡: 27A</Text>
+            <Text style={styles.textGRInsideBox}>전류⚡: {current}A</Text>
           </View>
 
           {/* 셀 전압 박스들 */}
           <View style={styles.cellContainer}>
-            <View style={styles.cellBox}>
-              <Text style={styles.textInsideBox}>셀 1전압⚡: 4999mV</Text>
-            </View>
-            <View style={styles.cellBox}>
-              <Text style={styles.textInsideBox}>셀 1전압⚡: 4980mV</Text>
-            </View>
-            <View style={styles.cellBox}>
-              <Text style={styles.textInsideBox}>셀 1전압⚡: 4998mV</Text>
-            </View>
-            <View style={styles.cellBox}>
-              <Text style={styles.textInsideBox}>셀 1전압⚡: 4320mV</Text>
-            </View>
+            {cellVoltages.map((voltage, index) => (
+                <View key={index} style={styles.cellBox}>
+                  <Text style={styles.textInsideBox}>셀 {index + 1}전압⚡: {voltage}mV</Text>
+                </View>
+            ))}
           </View>
 
           {/* 프리릴레이 스위치 */}
@@ -158,7 +174,6 @@ const styles = StyleSheet.create({
     marginTop: 22,
     position: 'absolute',
     top: height * 0.5,
-
   },
   relaySwitchText: {
     flex: 1,
