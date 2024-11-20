@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, ImageBackground, Image, Switch, TouchableOpacity, Dimensions } from 'react-native';
 
@@ -8,21 +8,24 @@ export default function App() {
   const [isRelayEnabled, setIsRelayEnabled] = useState(false);
   const toggleSwitch = () => setIsRelayEnabled(previousState => !previousState);
 
-  // 더미 데이터 설정
-  const [packVoltage, setPackVoltage] = useState("18.32"); // 팩 전압 (V 단위)
-  const [current, setCurrent] = useState("27");
-  const [cellVoltages, setCellVoltages] = useState(["4999", "4980", "4998", "4320"]);
+  // 셀 전압 상태 (각 셀의 전압을 관리)
+  const [cellVoltages, setCellVoltages] = useState(["5000", "5000", "5000", "5000"]);
+
+  // 팩 전압 상태 (셀 전압들의 합으로 계산)
+  const [packVoltage, setPackVoltage] = useState("0");
+
+  // 셀 전압이 변경될 때마다 팩 전압을 업데이트하는 함수
+  useEffect(() => {
+    const totalVoltage = cellVoltages.reduce((sum, voltage) => sum + parseFloat(voltage), 0) / 1000; // mV -> V 변환
+    setPackVoltage(totalVoltage.toFixed(2)); // 소수점 2자리까지 표시
+  }, [cellVoltages]);
 
   // 데이터 저장을 위한 ArrayBuffer와 DataView 생성
   const buffer = new ArrayBuffer(17); // 총 17바이트 (셀 전압 4개 * 2바이트 + 팩 전압 * 2바이트 + 온도/전류/릴레이 각 1바이트)
   const dataView = new DataView(buffer);
 
-  // 셀 전압 값 (예시 값 사용)
-  const cellVoltageValues = [4999, 4980, 4998, 4320]; // 각 셀 전압을 mV 단위로 가정
-  const packVoltageValue = Math.round(parseFloat(packVoltage) * 1000); // 팩 전압을 mV 단위로 변환
-
   const temperature = 25; // 섭씨 온도 (예시)
-  const currentValue = -10; // mA 단위 전류 (예시)
+  const currentValue = 20; // mA 단위 전류 (예시)
 
   const chargeRelay = isRelayEnabled ? 1 : 0; // 충전 릴레이 상태
   const dischargeRelay = !isRelayEnabled ? 1 : 0; // 방전 릴레이 상태
@@ -32,12 +35,13 @@ export default function App() {
     let offset = 0;
 
     // 셀 전압들을 각각 2바이트씩 저장 (Uint16으로 저장)
-    for (let i = 0; i < cellVoltageValues.length; i++) {
-      dataView.setUint16(offset, cellVoltageValues[i], true); // 리틀 엔디안 형식으로 저장
+    for (let i = 0; i < cellVoltages.length; i++) {
+      dataView.setUint16(offset, parseInt(cellVoltages[i]), true); // 리틀 엔디안 형식으로 저장
       offset += 2;
     }
 
     // 팩 전압을 Uint16으로 저장 (2바이트) - mV 단위로 변환된 값을 사용
+    const packVoltageValue = Math.round(parseFloat(packVoltage) * 1000); // V -> mV 변환
     dataView.setUint16(offset, packVoltageValue, true);
     offset += 2;
 
@@ -77,7 +81,7 @@ export default function App() {
             <Text style={styles.textGRInsideBox}>팩 전압⚡: {packVoltage}V</Text>
           </View>
           <View style={styles.roundedBoxYellow}>
-            <Text style={styles.textGRInsideBox}>전류⚡: {current}A</Text>
+            <Text style={styles.textGRInsideBox}>전류⚡: {currentValue}A</Text>
           </View>
 
           {/* 셀 전압 박스들 */}
@@ -115,8 +119,6 @@ export default function App() {
       </ImageBackground>
   );
 }
-
-
 
 const styles = StyleSheet.create({
   background: {
