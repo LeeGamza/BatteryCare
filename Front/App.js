@@ -1,36 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, ImageBackground, Image, Switch, TouchableOpacity, Dimensions } from 'react-native';
-import axios from 'axios';
 
 const { width, height } = Dimensions.get('window');
 
 export default function App() {
   const [isRelayEnabled, setIsRelayEnabled] = useState(false);
-  const [packVoltage, setPackVoltage] = useState("0");
-  const [current, setCurrent] = useState("0");
-  const [cellVoltages, setCellVoltages] = useState(["0", "0", "0", "0"]);
-
   const toggleSwitch = () => setIsRelayEnabled(previousState => !previousState);
 
-  // useEffect를 사용해 데이터 가져오기
-  useEffect(() => {
-    axios.get('http://your-backend-url.com/api/device-data')
-        .then(response => {
-          const data = response.data;
-          setPackVoltage(data.packVoltage); // 팩 전압
-          setCurrent(data.current); // 전류
-          setCellVoltages([
-            data.cell1Voltage,
-            data.cell2Voltage,
-            data.cell3Voltage,
-            data.cell4Voltage
-          ]); // 셀 전압들
-        })
-        .catch(error => {
-          console.error('Error fetching data:', error);
-        });
-  }, []);
+  // 더미 데이터 설정
+  const [packVoltage, setPackVoltage] = useState("18.32");
+  const [current, setCurrent] = useState("27");
+  const [cellVoltages, setCellVoltages] = useState(["4999", "4980", "4998", "4320"]);
 
   return (
       <ImageBackground
