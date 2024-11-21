@@ -5,6 +5,9 @@ const { parseBmsData } = require('./utils/parser');
 // MongoDB 연결
 connectToMongoDB();
 
+// 마지막으로 처리된 데이터 타임스탬프
+let lastProcessedTimestamp = 0;
+
 noble.on('stateChange', async (state) => {
     if (state === 'poweredOn') {
         console.log('Starting BLE scanning...');
@@ -38,12 +41,20 @@ noble.on('discover', async (peripheral) => {
                 await txCharacteristic.subscribeAsync();
 
                 txCharacteristic.on('data', async (data) => {
-                    console.log(`Received raw data: ${data.toString('hex')}`);
                     try {
-                        // 데이터를 파싱하고 DB에 저장
-                        const parsedData = parseBmsData(data);
-                        console.log('Parsed Data:', parsedData);
-                        await saveData(parsedData);
+                        const currentTimestamp = Date.now(); // 현재 타임스탬프 (밀리초)
+
+                        // 1초 단위로 필터링
+                        if (currentTimestamp - lastProcessedTimestamp >= 1000) {
+                            lastProcessedTimestamp = currentTimestamp;
+
+                            console.log(`Received raw data: ${data.toString('hex')}`);
+                            const parsedData = parseBmsData(data);
+                            console.log('Parsed Data:', parsedData);
+                            await saveData(parsedData);
+                        } else {
+                            console.log('Skipping data to maintain 1-second interval.');
+                        }
                     } catch (error) {
                         console.error('Error processing data:', error.message);
                         console.log(`Data length: ${data.length}, Data: ${data.toString('hex')}`);
