@@ -12,6 +12,7 @@
   "dependencies": {
     "@abandonware/noble": "^1.9.2-25",
     "mongodb": "^6.10.0",
-    "mongoose": "^8.8.2"
+    "mongoose": "^8.8.2",
+    "node-ble": "^1.12.0"
   }
 }
