@@ -5,12 +5,13 @@ const MONGO_URI = 'mongodb+srv://ljh20230379:h3140910!!@test.nowvb.mongodb.net/?
 
 async function connectToMongoDB() {
     try {
-        await mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+        await mongoose.connect(MONGO_URI);
         console.log('MongoDB connected');
     } catch (error) {
         console.error('MongoDB connection error:', error);
     }
 }
+
 
 async function saveLastStatus(parsedData) {
     const lastStatus = new LastStatus(parsedData);
