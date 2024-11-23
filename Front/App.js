@@ -1,21 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, ImageBackground, Image, Dimensions, Switch } from 'react-native';
 import { getFullHourTimes } from './utils/timeUtils';
 import { BarChart } from 'react-native-chart-kit';
+
 const { width, height } = Dimensions.get('window');
 
 export default function App() {
   const [isPlusRelayEnabled, setIsPlusRelayEnabled] = useState(false);
   const [isMinusRelayEnabled, setIsMinusRelayEnabled] = useState(false);
 
-  // 더미 데이터 설정
-  const [packVoltage, setPackVoltage] = useState("18.59"); // 팩 전압 (V 단위)
-  const [current, setCurrent] = useState("27");
-  const [cellVoltages, setCellVoltages] = useState(["4299", "4980", "4998", "4320"]);
-  const xLabels = getFullHourTimes();
-  const [tempertage, setempertage] = useState("98.7") //배터리 온도값
-  const [cyclevalue, setcyclevalue] = useState("13") // 사이클 횟수
+  // 상태 값
+  const [packVoltage, setPackVoltage] = useState('');
+  const [current, setCurrent] = useState('');
+  const [cellVoltages, setCellVoltages] = useState([]);
+  const [temperature, setemperature] = useState(''); // 배터리 온도값
+  const [cyclevalue, setcyclevalue] = useState(''); // 사이클 횟수
 
+  const xLabels = getFullHourTimes(); // 시간 레이블
+
+  useEffect(() => {
+    // API 호출
+    const fetchData = async () => {
+      try {
+        const response = await fetch('http://219.249.95.125:3000/api/data'); // 백엔드 URL
+        const data = await response.json();
+
+        if (response.ok) {
+          // 상태 업데이트
+          setPackVoltage(data.packVoltage || '0');
+          setCurrent(data.current || '0');
+          setCellVoltages(data.cellVoltages || []);
+          setemperature(data.temperature || '0');
+          setcyclevalue(data.cycle || '0'); // MongoDB에 cycle 값이 있는 경우
+        } else {
+          console.error('Failed to fetch data:', data.message);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData();
+  }, []); // 컴포넌트가 마운트될 때 실행
 
   // 각 박스의 배경 색을 토글 상태에 따라 동적으로 설정하는 함수
   const getBoxBackgroundColor = (isEnabled) => {
@@ -61,15 +87,15 @@ export default function App() {
                     labels: xLabels,
                     datasets: [{ data: [70, 85, 0, 100] }] // 임시 데이터
                   }}
-                  width={width * 0.9} // 그래프 너비
-                  height={220} // 그래프 높이
+                  width={width * 0.9}
+                  height={220}
                   yAxisSuffix="%"
-                  yAxisInterval={1} // y축 간격
+                  yAxisInterval={1}
                   chartConfig={{
                     backgroundColor: '#1cc910',
                     backgroundGradientFrom: '#eff3ff',
                     backgroundGradientTo: '#efefef',
-                    decimalPlaces: 0, // 소수점 자리
+                    decimalPlaces: 0,
                     color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
                     labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
                     barPercentage: 0.5,
@@ -108,20 +134,20 @@ export default function App() {
         <View style={styles.temperature}>
           <View style={styles.row}>
           <Image
-              source={ tempertage >= 45 ? require('./Image/Temp-RREEDD.png') : require('./Image/Temp-BBLLUUEE.png')} // 이미지 경로
+              source={ temperature >= 45 ? require('./Image/Temp-RREEDD.png') : require('./Image/Temp-BBLLUUEE.png')} // 이미지 경로
               style={styles.icon} // 이미지 스타일
           />
           <Text
               style={[
                 styles.temcolortext,
-                { color: tempertage >= 45 ? '#FF0000' : '#4EA7E0' } // 조건에 따라 색상 변경
+                { color: temperature >= 45 ? '#FF0000' : '#4EA7E0' } // 조건에 따라 색상 변경
               ]}
           >
-            현재 배터리 온도 : {tempertage}℃
+            현재 배터리 온도 : {temperature}℃
           </Text>
           </View>
           <Text style={styles.teminsidebox}>
-            {tempertage >= 45 ? "온도가 높습니다! 배터리 수명에 영향을 끼칠 수 있습니다." : "쾌적합니다! 배터리 수명에 영향을 끼치지 않습니다."}
+            {temperature >= 45 ? "온도가 높습니다! 배터리 수명에 영향을 끼칠 수 있습니다." : "쾌적합니다! 배터리 수명에 영향을 끼치지 않습니다."}
           </Text>
         </View>
         {/* 사이클 박스 */}

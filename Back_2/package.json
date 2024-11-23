@@ -11,6 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "@abandonware/noble": "^1.9.2-25",
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
     "mongodb": "^6.10.0",
     "mongoose": "^8.8.2",
     "node-ble": "^1.12.0",
