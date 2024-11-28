@@ -1,11 +1,17 @@
 ﻿const noble = require('@abandonware/noble');
+const express = require('express');
+const os = require('os');
 const { saveData, connectToMongoDB } = require('./database/mongoService');
 const { parseBmsData } = require('./utils/parser');
+const { LastStatus } = require('./database/schemas');
+
+const app = express();
+const PORT = 3000; // Express 서버 포트 번호
 
 // MongoDB 연결
 connectToMongoDB();
 
-// 마지막으로 처리된 데이터 타임스탬프
+// BLE 데이터 수집 부분
 let lastProcessedTimestamp = 0;
 
 noble.on('stateChange', async (state) => {
@@ -71,4 +77,40 @@ noble.on('discover', async (peripheral) => {
             }
         }
     }
+});
+
+// Express API 서버
+app.get('/api/data', async (req, res) => {
+    try {
+        const data = await LastStatus.findOne(); // 가장 최신 데이터 가져오기
+        if (data) {
+            res.json(data);
+        } else {
+            res.status(404).json({ message: 'No data found' });
+        }
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
+// 서버 실행
+app.listen(PORT, () => {
+    const networkInterfaces = os.networkInterfaces();
+    const addresses = [];
+
+    for (const interfaceName in networkInterfaces) {
+        const interfaceInfo = networkInterfaces[interfaceName];
+        for (const alias of interfaceInfo) {
+            if (alias.family === 'IPv4' && !alias.internal) {
+                addresses.push(alias.address);
+            }
+        }
+    }
+
+    console.log(`Server running on the following addresses:`);
+    addresses.forEach((address) => {
+        console.log(`- http://${address}:${PORT}`);
+    });
+    console.log(`Also available on localhost: http://localhost:${PORT}`);
 });
