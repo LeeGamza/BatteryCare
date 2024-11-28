@@ -3,7 +3,8 @@ const express = require('express');
 const os = require('os');
 const { saveData, connectToMongoDB } = require('./database/mongoService');
 const { parseBmsData } = require('./utils/parser');
-const { LastStatus } = require('./database/schemas');
+const { LastStatus, LowData } = require('./database/schemas');
+
 
 const app = express();
 const PORT = 3000; // Express 서버 포트 번호
@@ -82,7 +83,7 @@ noble.on('discover', async (peripheral) => {
 // Express API 서버
 app.get('/api/data', async (req, res) => {
     try {
-        const data = await LastStatus.findOne(); // 가장 최신 데이터 가져오기
+        const data = await LastStatus.findOne();
         if (data) {
             res.json(data);
         } else {
@@ -93,6 +94,39 @@ app.get('/api/data', async (req, res) => {
         res.status(500).json({ message: 'Internal Server Error' });
     }
 });
+
+app.get('/api/averagePackVoltage', async (req, res) => {
+    try {
+        const now = new Date();
+        const currentHour = now.getHours(); // 현재 시간
+        const pastHours = [currentHour - 2, currentHour - 1, currentHour]; // 과거 2시간 포함 총 3시간
+        const data = await LowData.find({ hour: { $in: pastHours } });
+
+        if (!data.length) {
+            return res.status(404).json({ message: 'No data found for the specified hours.' });
+        }
+
+        // 각 시간의 packVoltage 평균 계산
+        const averagePackVoltage = pastHours.map(hour => {
+            const hourData = data.find(doc => doc.hour === hour);
+
+            if (!hourData || !hourData.data.length) {
+                return { hour, averageVoltage: 0 };
+            }
+
+            const totalVoltage = hourData.data.reduce((sum, item) => sum + (item.packVoltage || 0), 0);
+            const averageVoltage = hourData.data.length ? totalVoltage / hourData.data.length : 0;
+
+            return { hour, averageVoltage };
+        });
+
+        res.json(averagePackVoltage);
+    } catch (error) {
+        console.error('Error calculating average pack voltage:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
 
 // 서버 실행
 app.listen(PORT, () => {
