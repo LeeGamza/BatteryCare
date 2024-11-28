@@ -1,10 +1,10 @@
 ﻿const noble = require('@abandonware/noble');
 const express = require('express');
 const os = require('os');
-const { saveData, connectToMongoDB } = require('./database/mongoService');
+const { saveData, connectToMongoDB, saveCycleAndImbalance } = require('./database/mongoService');
 const { parseBmsData } = require('./utils/parser');
+const { calculateCycle, detectImbalance } = require('./utils/cycleCalculator'); // 중복 제거
 const { LastStatus, LowData } = require('./database/schemas');
-
 
 const app = express();
 const PORT = 3000; // Express 서버 포트 번호
@@ -58,7 +58,21 @@ noble.on('discover', async (peripheral) => {
                             console.log(`Received raw data: ${data.toString('hex')}`);
                             const parsedData = parseBmsData(data);
                             console.log('Parsed Data:', parsedData);
-                            await saveData(parsedData);
+
+                            // **셀 불균형 감지**
+                            const imbalanceDetected = detectImbalance(parsedData.cellVoltages);
+                            if (imbalanceDetected) {
+                                console.warn('Cell imbalance detected!');
+                            } else {
+                                console.log('Cell voltages are balanced.');
+                            }
+
+                            // 사이클 계산
+                            const cycleCount = calculateCycle(parsedData);
+
+                            // 데이터 저장
+                            await saveData(parsedData); // 시간별 및 최신 데이터 저장
+                            await saveCycleAndImbalance(cycleCount, parsedData); // 사이클 수와 불균형 상태 저장
                         } else {
                             console.log('Skipping data to maintain 1-second interval.');
                         }
@@ -95,6 +109,22 @@ app.get('/api/data', async (req, res) => {
     }
 });
 
+// 사이클 수 조회 API
+app.get('/api/cycleCount', async (req, res) => {
+    try {
+        const lastStatus = await LastStatus.findOne();
+        if (lastStatus) {
+            res.json({ cycleCount: lastStatus.cycleCount });
+        } else {
+            res.status(404).json({ message: 'No cycle count found' });
+        }
+    } catch (error) {
+        console.error('Error fetching cycle count:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
+// 시간별 팩 전압 평균 조회 API
 app.get('/api/averagePackVoltage', async (req, res) => {
     try {
         const now = new Date();
@@ -126,7 +156,6 @@ app.get('/api/averagePackVoltage', async (req, res) => {
         res.status(500).json({ message: 'Internal Server Error' });
     }
 });
-
 
 // 서버 실행
 app.listen(PORT, () => {
