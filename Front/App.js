@@ -22,7 +22,7 @@ export default function App() {
     // API 호출
     const fetchData = async () => {
       try {
-        const response = await fetch('http://219.249.95.125:3000/api/data'); // 백엔드 URL
+        const response = await fetch('http://192.168.27.242:3000/api/data'); // 백엔드 URL
         const data = await response.json();
 
         if (response.ok) {
@@ -73,7 +73,7 @@ export default function App() {
           <View style={styles.cellContainer}>
             {cellVoltages.map((voltage, index) => (
                 <View key={index} style={styles.cellBox}>
-                  <Text style={styles.textInsideBox}>셀 {index + 1}전압⚡: {voltage}mV</Text>
+                  <Text style={styles.textInsideBox}>셀 {index + 1}전압⚡: {voltage}V</Text>
                 </View>
             ))}
           </View>
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   },
   textGRInsideBox: {
     color: '#000',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     textAlign: 'center',
   },
