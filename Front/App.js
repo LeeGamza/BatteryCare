@@ -21,7 +21,7 @@ export default function App() {
   useEffect(() => {
     const fetchCurrentData = async () => {
       try {
-        const response = await fetch('http://192.168.27.89:3000/api/data');
+        const response = await fetch('http://192.168.219.155:3000/api/data');
         const data = await response.json();
 
         if (response.ok) {
@@ -40,7 +40,7 @@ export default function App() {
 
     const fetchAveragePackVoltage = async () => {
       try {
-        const response = await fetch('http://192.168.27.89:3000/api/averagePackVoltage');
+        const response = await fetch('http://192.168.219.155:3000/api/averagePackVoltage');
         const data = await response.json();
 
         if (response.ok && Array.isArray(data)) {
@@ -63,6 +63,14 @@ export default function App() {
 
     fetchCurrentData();
     fetchAveragePackVoltage();
+
+    const interval = setInterval(() => {
+      fetchCurrentData();
+      fetchAveragePackVoltage();// 그래프 제외 데이터만 업데이트
+    }, 30000);
+
+    // 컴포넌트 언마운트 시 인터벌 정리
+    return () => clearInterval(interval);
   }, []);
 
   // 각 박스의 배경 색을 토글 상태에 따라 동적으로 설정하는 함수
