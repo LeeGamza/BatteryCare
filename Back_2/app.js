@@ -1,7 +1,7 @@
 ﻿const noble = require('@abandonware/noble');
 const express = require('express');
 const os = require('os');
-const { saveData, connectToMongoDB, saveCycleAndImbalance, saveLastStatus } = require('./database/mongoService');
+const { saveData, connectToMongoDB, saveCycleAndImbalance } = require('./database/mongoService');
 const { parseBmsData } = require('./utils/parser');
 const { calculateCycle, detectImbalance } = require('./utils/cycleCalculator'); // 중복 제거
 const { LastStatus, LowData } = require('./database/schemas');
@@ -11,10 +11,6 @@ const PORT = 3000; // Express 서버 포트 번호
 
 // MongoDB 연결
 connectToMongoDB();
-
-// 전역 변수 선언
-global.rxCharacteristic = null;
-let peripheralDevice = null;
 
 // BLE 데이터 수집 부분
 let lastProcessedTimestamp = 0;
@@ -42,18 +38,15 @@ noble.on('discover', async (peripheral) => {
 
             const { characteristics } = await peripheral.discoverSomeServicesAndCharacteristicsAsync(
                 ['6e400001b5a3f393e0a9e50e24dcca9e'], // Service UUID
-                ['6e400002b5a3f393e0a9e50e24dcca9e', '6e400003b5a3f393e0a9e50e24dcca9e']  // RX and TX Characteristic UUIDs
+                ['6e400003b5a3f393e0a9e50e24dcca9e']  // TX Characteristic UUID
             );
 
             const txCharacteristic = characteristics.find(char => char.uuid === '6e400003b5a3f393e0a9e50e24dcca9e');
-            rxCharacteristic = characteristics.find(char => char.uuid === '6e400002b5a3f393e0a9e50e24dcca9e');
 
-            if (txCharacteristic && rxCharacteristic) {
-                console.log('TX and RX Characteristics found. Ready to send commands.');
-                peripheralDevice = peripheral; // 전역 변수에 연결된 장치를 저장
+            if (txCharacteristic) {
+                console.log('TX Characteristic found. Subscribing...');
                 await txCharacteristic.subscribeAsync();
 
-                // 수신 데이터 처리 (TX characteristic)
                 txCharacteristic.on('data', async (data) => {
                     try {
                         const currentTimestamp = Date.now(); // 현재 타임스탬프 (밀리초)
@@ -88,8 +81,6 @@ noble.on('discover', async (peripheral) => {
                         console.log(`Data length: ${data.length}, Data: ${data.toString('hex')}`);
                     }
                 });
-            } else {
-                console.error('RX or TX Characteristic not found.');
             }
             break; // 연결 성공 시 루프 종료
         } catch (error) {
@@ -103,117 +94,68 @@ noble.on('discover', async (peripheral) => {
     }
 });
 
-// 자동 재연결을 위해 연결 끊김 이벤트 핸들링
-app.post('/on', async (req, res) => {
+// Express API 서버
+app.get('/api/data', async (req, res) => {
     try {
-        if (!rxCharacteristic) {
-            console.log('Error: rxCharacteristic is undefined. BLE device might not be connected.');
-            return res.status(400).json({ message: 'BLE device not connected. Please try connecting again.' });
+        const data = await LastStatus.findOne();
+        if (data) {
+            res.json(data);
+        } else {
+            res.status(404).json({ message: 'No data found' });
         }
-
-        // BLE 연결 상태 점검
-        if (!rxCharacteristic._peripheral || rxCharacteristic._peripheral.state !== 'connected') {
-            console.log('Error: BLE device is not in connected state. Attempting reconnection...');
-
-            if (peripheralDevice) {
-                let reconnectAttempts = 0;
-                const maxReconnectAttempts = 5;
-
-                while (reconnectAttempts < maxReconnectAttempts) {
-                    try {
-                        reconnectAttempts++;
-                        console.log(`Reconnection attempt ${reconnectAttempts}...`);
-
-                        if (peripheralDevice.state === 'connected') {
-                            console.log('Peripheral is still marked as connected. Disconnecting...');
-                            await peripheralDevice.disconnectAsync();
-                        }
-
-                        console.log('Attempting to reconnect to peripheral...');
-                        await peripheralDevice.connectAsync();
-                        console.log('Reconnected to BLE device successfully.');
-                        break; // 재연결 성공 시 루프 종료
-                    } catch (reconnectError) {
-                        console.error('Reconnection attempt failed:', reconnectError.message);
-                        if (reconnectAttempts >= maxReconnectAttempts) {
-                            return res.status(400).json({ message: 'BLE device could not be reconnected. Please try again.' });
-                        }
-                    }
-                }
-            } else {
-                return res.status(400).json({ message: 'No BLE device available to reconnect.' });
-            }
-        }
-
-        console.log('Attempting to send ON command to BMS...');
-        const onCommand = Buffer.from([0x01]); // BMS ON 명령
-
-        await rxCharacteristic.writeAsync(onCommand, false);
-        console.log('ON command sent successfully.');
-
-        res.status(200).json({ message: 'BMS module turned ON.' });
     } catch (error) {
-        console.error('Unhandled error while sending ON command:', error.message);
-        res.status(500).json({ message: 'An error occurred while attempting to turn ON the BMS module.' });
+        console.error('Error fetching data:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 });
 
-
-// Express API 서버 - BMS 제어 엔드포인트 추가
-app.post('/off', async (req, res) => {
+// 사이클 수 조회 API
+app.get('/api/cycleCount', async (req, res) => {
     try {
-        if (!rxCharacteristic) {
-            console.log('Error: rxCharacteristic is undefined. BLE device might not be connected.');
-            return res.status(400).json({ message: 'BLE device not connected. Please try connecting again.' });
+        const lastStatus = await LastStatus.findOne();
+        if (lastStatus) {
+            res.json({ cycleCount: lastStatus.cycleCount });
+        } else {
+            res.status(404).json({ message: 'No cycle count found' });
         }
-
-        if (!rxCharacteristic._peripheral || rxCharacteristic._peripheral.state !== 'connected') {
-            console.log('Error: BLE device is not in connected state. Attempting reconnection...');
-
-            if (peripheralDevice) {
-                let reconnectAttempts = 0;
-                const maxReconnectAttempts = 5;
-
-                while (reconnectAttempts < maxReconnectAttempts) {
-                    try {
-                        reconnectAttempts++;
-                        console.log(`Reconnection attempt ${reconnectAttempts}...`);
-
-                        if (peripheralDevice.state === 'connected') {
-                            console.log('Peripheral is still marked as connected. Disconnecting...');
-                            await peripheralDevice.disconnectAsync();
-                        }
-
-                        console.log('Attempting to reconnect to peripheral...');
-                        await peripheralDevice.connectAsync();
-                        console.log('Reconnected to BLE device successfully.');
-                        break; // 재연결 성공 시 루프 종료
-                    } catch (reconnectError) {
-                        console.error('Reconnection attempt failed:', reconnectError.message);
-                        if (reconnectAttempts >= maxReconnectAttempts) {
-                            return res.status(400).json({ message: 'BLE device could not be reconnected. Please try again.' });
-                        }
-                    }
-                }
-            } else {
-                return res.status(400).json({ message: 'No BLE device available to reconnect.' });
-            }
-        }
-
-        console.log('Attempting to send OFF command to BMS...');
-        const offCommand = Buffer.from([0x00]); // BMS OFF 명령
-
-        await rxCharacteristic.writeAsync(offCommand, false);
-        console.log('OFF command sent successfully.');
-
-        res.status(200).json({ message: 'BMS module turned OFF.' });
     } catch (error) {
-        console.error('Unhandled error while sending OFF command:', error.message);
-        res.status(500).json({ message: 'An error occurred while attempting to turn OFF the BMS module.' });
+        console.error('Error fetching cycle count:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 });
 
+// 시간별 팩 전압 평균 조회 API
+app.get('/api/averagePackVoltage', async (req, res) => {
+    try {
+        const now = new Date();
+        const currentHour = now.getHours(); // 현재 시간
+        const pastHours = [currentHour - 2, currentHour - 1, currentHour]; // 과거 2시간 포함 총 3시간
+        const data = await LowData.find({ hour: { $in: pastHours } });
 
+        if (!data.length) {
+            return res.status(404).json({ message: 'No data found for the specified hours.' });
+        }
+
+        // 각 시간의 packVoltage 평균 계산
+        const averagePackVoltage = pastHours.map(hour => {
+            const hourData = data.find(doc => doc.hour === hour);
+
+            if (!hourData || !hourData.data.length) {
+                return { hour, averageVoltage: 0 };
+            }
+
+            const totalVoltage = hourData.data.reduce((sum, item) => sum + (item.packVoltage || 0), 0);
+            const averageVoltage = hourData.data.length ? totalVoltage / hourData.data.length : 0;
+
+            return { hour, averageVoltage };
+        });
+
+        res.json(averagePackVoltage);
+    } catch (error) {
+        console.error('Error calculating average pack voltage:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
 
 // 서버 실행
 app.listen(PORT, () => {
