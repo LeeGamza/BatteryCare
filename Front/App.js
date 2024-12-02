@@ -21,7 +21,7 @@ export default function App() {
   useEffect(() => {
     const fetchCurrentData = async () => {
       try {
-        const response = await fetch('http://192.168.219.155:3000/api/data');
+        const response = await fetch('http://192.168.219.148:3000/api/data');
         const data = await response.json();
 
         if (response.ok) {
@@ -29,7 +29,6 @@ export default function App() {
           setCurrent(data.current || '0');
           setCellVoltages(data.cellVoltages || []);
           setTemperature(data.temperature || '0');
-          setCyclevalue(data.cycle || '0');
         } else {
           console.error('Failed to fetch data:', data.message);
         }
@@ -38,13 +37,28 @@ export default function App() {
       }
     };
 
+    const fetchCycleCount = async () => {
+      try {
+        const response = await fetch('http://192.168.219.148:3000/api/cycleCount');
+        const cycleCount = await response.json();
+
+        if (response.ok) {
+          setCyclevalue(cycleCount.cyclevalue || '0');
+        } else {
+          console.error('Failed to fetch cycleCount:', cycleCount.message);
+        }
+      } catch (error) {
+        console.error('Error fetching cycleCount', error);
+      }
+    };
+
     const fetchAveragePackVoltage = async () => {
       try {
-        const response = await fetch('http://192.168.219.155:3000/api/averagePackVoltage');
-        const data = await response.json();
+        const response = await fetch('http://192.168.219.148:3000/api/averagePackVoltage');
+        const graphData = await response.json();
 
-        if (response.ok && Array.isArray(data)) {
-          const validatedData = data.map(item => ({
+        if (response.ok && Array.isArray(graphData)) {
+          const validatedData = graphData.map(item => ({
             hour: item.hour,
             averageVoltage: Number(item.averageVoltage) || 0,
           }));
@@ -52,7 +66,7 @@ export default function App() {
           setXLabels(validatedData.map(item => `${item.hour}시`));
           setPackVoltageHistory(validatedData.map(item => item.averageVoltage));
         } else {
-          console.error('Failed to fetch average pack voltage:', data.message);
+          console.error('Failed to fetch average pack voltage:', graphData.message);
           setXLabels([]);
           setPackVoltageHistory([]);
         }
@@ -63,10 +77,12 @@ export default function App() {
 
     fetchCurrentData();
     fetchAveragePackVoltage();
+    fetchCycleCount();
 
     const interval = setInterval(() => {
       fetchCurrentData();
-      fetchAveragePackVoltage();// 그래프 제외 데이터만 업데이트
+      fetchAveragePackVoltage();
+      fetchCycleCount();
     }, 30000);
 
     // 컴포넌트 언마운트 시 인터벌 정리
@@ -114,13 +130,12 @@ export default function App() {
               <Text style={styles.chartTitle}>팩전압 기록</Text>
               <BarChart
                   data={{
-                    labels: xLabels,
-                    datasets: [{ data: packVoltageHistory }],
+                    labels: xLabels, // x축 레이블
+                    datasets: [{ data: packVoltageHistory }], // y축 데이터
                   }}
                   width={width * 0.9}
                   height={220}
-                  yAxisSuffix="V"
-                  yAxisInterval={1}
+                  yAxisSuffix="V" // y축 값 뒤에 "V" 추가
                   chartConfig={{
                     backgroundColor: '#1cc910',
                     backgroundGradientFrom: '#eff3ff',
@@ -128,8 +143,14 @@ export default function App() {
                     decimalPlaces: 1,
                     color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
                     labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                    barPercentage: 0.5,
+                    style: {
+                      borderRadius: 16,
+                    },
+                    propsForBackgroundLines: {
+                      strokeWidth: 1,
+                    },
                   }}
+                  fromZero={true} // y축 0부터 시작
                   style={styles.chart}
               />
             </View>
