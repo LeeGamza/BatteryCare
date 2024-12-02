@@ -37,6 +37,22 @@ export default function App() {
       }
     };
 
+    const fetchRelayData = async () => {
+      try {
+        const response = await fetch('http://192.168.219.148:3000/api/data'); // 적절한 API 엔드포인트
+        const relayData = await response.json();
+
+        if (response.ok) {
+          setIsPlusRelayEnabled(relayData.chargeRelay || false); // chargeRelay 값을 설정
+          setIsMinusRelayEnabled(relayData.dischargeRelay || false); // dischargeRelay 값을 설정
+        } else {
+          console.error('Failed to fetch relay data:', relayData.message);
+        }
+      } catch (error) {
+        console.error('Error fetching relay data:', error);
+      }
+    };
+
     const fetchCycleCount = async () => {
       try {
         const response = await fetch('http://192.168.219.148:3000/api/cycleCount');
@@ -78,11 +94,13 @@ export default function App() {
     fetchCurrentData();
     fetchAveragePackVoltage();
     fetchCycleCount();
+    fetchRelayData();
 
     const interval = setInterval(() => {
       fetchCurrentData();
       fetchAveragePackVoltage();
       fetchCycleCount();
+      fetchRelayData();
     }, 30000);
 
     // 컴포넌트 언마운트 시 인터벌 정리
@@ -161,10 +179,10 @@ export default function App() {
         <View style={[styles.plusbox, { backgroundColor: getBoxBackgroundColor(isPlusRelayEnabled) }]}>
           <Text style={styles.textInsideBox}>&ensp;+릴레이</Text>
           <Switch
-              trackColor={{ false: "#E9E9EA", true: "#34C458" }}  // 토글 배경 색 (켜졌을 때는 흰색, 꺼졌을 때는 회색)
-              thumbColor={isPlusRelayEnabled ? "#FFFFFF" : "#f4f3f4"} // 스위치 thumb 색 (켜졌을 때는 흰색, 꺼졌을 때는 회색)
-              onValueChange={() => setIsPlusRelayEnabled(previousState => !previousState)}
-              value={isPlusRelayEnabled}
+              trackColor={{ false: "#E9E9EA", true: "#34C458" }} // 토글 배경 색
+              thumbColor={isPlusRelayEnabled ? "#FFFFFF" : "#f4f3f4"} // 스위치 색
+              value={isPlusRelayEnabled} // 백엔드 상태 값
+              disabled={true} // 사용자가 스위치를 조작하지 못하도록 설정
               style={styles.switchStyle}
           />
         </View>
@@ -173,10 +191,10 @@ export default function App() {
         <View style={[styles.minusbox, { backgroundColor: getBoxBackgroundColor(isMinusRelayEnabled) }]}>
           <Text style={styles.textInsideBox}>&ensp;-릴레이</Text>
           <Switch
-              trackColor={{ false: "#E9E9EA", true: "#34C458" }}  // 토글 배경 색 (켜졌을 때는 흰색, 꺼졌을 때는 회색)
-              thumbColor={isMinusRelayEnabled ? "#FFFFFF" : "#f4f3f4"} // 스위치 thumb 색 (켜졌을 때는 흰색, 꺼졌을 때는 회색)
-              onValueChange={() => setIsMinusRelayEnabled(previousState => !previousState)}
-              value={isMinusRelayEnabled}
+              trackColor={{ false: "#E9E9EA", true: "#34C458" }} // 토글 배경 색
+              thumbColor={isMinusRelayEnabled ? "#FFFFFF" : "#f4f3f4"} // 스위치 색
+              value={isMinusRelayEnabled} // 백엔드 상태 값
+              disabled={true} // 사용자가 스위치를 조작하지 못하도록 설정
               style={styles.switchStyle}
           />
         </View>
