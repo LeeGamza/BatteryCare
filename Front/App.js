@@ -21,7 +21,7 @@ export default function App() {
   const getBoxBackgroundColor = (isEnabled) => {
     return isEnabled ? '#FFFFFF' : '#767577'; // 켜졌을 때 흰색, 꺼졌을 때 회색
   };
-
+  //살려줘
   return (
       <ImageBackground
           source={require('./Image/BatteryCare-BackGround.png')}
