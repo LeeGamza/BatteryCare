@@ -11,16 +11,18 @@
     const packVoltage = data.readUInt16LE(8) / 1000;
     const temperature = data.readInt16LE(10) / 1000;
     const current = data.readUInt16LE(11) / 1000;
-    const chargeRelay = data.readUInt8(12) === 1;
-    const dischargeRelay = data.readUInt8(13) === 1;
+    const Heartbeat = data.readUInt16LE(12) / 10;
+    const Relay = data.readUInt8(13) === 1;
+    const Alarm = data.readUInt8(14) === 1;
 
     return {
         cellVoltages: [cellVoltage1, cellVoltage2, cellVoltage3, cellVoltage4],
         packVoltage,
         temperature,
         current,
-        chargeRelay,
-        dischargeRelay,
+        Heartbeat,
+        Relay,
+        Alarm,
     };
 }
 
