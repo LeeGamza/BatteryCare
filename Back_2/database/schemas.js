@@ -11,8 +11,9 @@ const dataSchema = new mongoose.Schema({
     packVoltage: Number, // 팩 전압
     temperature: Number, // 온도
     current: Number, // 전류
-    chargeRelay: Boolean, // 충전 릴레이 상태
-    dischargeRelay: Boolean, // 방전 릴레이 상태
+    Heartbeat: Number, // 하트비트
+    Relay: Boolean, // 방전 릴레이 상태
+    Alarm: Boolean, // 알람 신호
     timestamp: {
         type: String,
         default: getKoreanTimeString, // 한국 시간
