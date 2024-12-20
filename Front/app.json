@@ -1,14 +1,12 @@
 {
   "expo": {
+    "newArchEnabled": true,
     "name": "Front",
     "slug": "Front",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "extra": {
-      "newArchEnabled": true
-    },
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
