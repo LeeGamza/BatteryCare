@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ImageBackground, Image, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, ImageBackground, Image, Dimensions, Alert } from 'react-native';
 import { BarChart } from 'react-native-chart-kit';
+
 const { width, height } = Dimensions.get('window');
 
 export default function App() {
@@ -8,17 +9,20 @@ export default function App() {
   const [packVoltage, setPackVoltage] = useState('');
   const [current, setCurrent] = useState('');
   const [cellVoltages, setCellVoltages] = useState([]);
-  const [temperature, setTemperature] = useState(''); // 배터리 온도값
-  const [cyclevalue, setCyclevalue] = useState(''); // 사이클 횟수
+  const [temperature, setTemperature] = useState('');
+  const [cyclevalue, setCyclevalue] = useState('');
   const [packVoltageHistory, setPackVoltageHistory] = useState([]);
   const [xLabels, setXLabels] = useState([]);
-  const [heartbeat, setHeartbeat] = useState(''); // HEARTBEAT 값을 저장
-  const [alarmState, setAlarmState] = useState(false); // Alarm 상태를 저장 (true/false)
+  const [heartbeat, setHeartbeat] = useState('');
+  const [alarmState, setAlarmState] = useState(false);
+  const [hasShownAlert, setHasShownAlert] = useState(false);
 
   useEffect(() => {
+    console.log('alarmState:', alarmState);
+    console.log('hasShownAlert:', hasShownAlert);
     const fetchCurrentData = async () => {
       try {
-        const response = await fetch('http://10.4.152.135:3000/api/data');
+        const response = await fetch('http://10.4.152.159:3000/api/data');
         const data = await response.json();
 
         if (response.ok) {
@@ -36,7 +40,7 @@ export default function App() {
 
     const fetchCycleCount = async () => {
       try {
-        const response = await fetch('http://10.4.152.135:3000/api/cycleCount');
+        const response = await fetch('http://10.4.152.159:3000/api/cycleCount');
         const cycleCount = await response.json();
 
         if (response.ok) {
@@ -51,7 +55,7 @@ export default function App() {
 
     const fetchAveragePackVoltage = async () => {
       try {
-        const response = await fetch('http://10.4.152.135:3000/api/averagePackVoltage');
+        const response = await fetch('http://10.4.152.159:3000/api/averagePackVoltage');
         const graphData = await response.json();
 
         if (response.ok && Array.isArray(graphData)) {
@@ -71,13 +75,15 @@ export default function App() {
         console.error('Error fetching average pack voltage:', error);
       }
     };
+
     const heartbeatAlram = async () => {
       try {
-        const response = await fetch('http://10.4.152.135:3000/api/status');
+        const response = await fetch('http://10.4.152.159:3000/api/status');
         const data = await response.json();
 
         if (response.ok) {
           setHeartbeat(data.heartbeat || 0);
+          setAlarmState(data.alarmState !== undefined ? data.alarmState : false);
         } else {
           console.error('Failed to fetch status:', data.message);
         }
@@ -85,6 +91,19 @@ export default function App() {
         console.error('Error fetching status:', error);
       }
     };
+
+    if (alarmState && !hasShownAlert) {
+      Alert.alert(
+          '경고',
+          '배터리 상태를 확인하세요!',
+          [{ text: '확인', onPress: () => console.log('Alert dismissed') }]
+      );
+      setHasShownAlert(true);
+    }
+
+    if (!alarmState) {
+      setHasShownAlert(false);
+    }
 
     fetchCurrentData();
     fetchAveragePackVoltage();
@@ -98,15 +117,8 @@ export default function App() {
       heartbeatAlram();
     }, 30000);
 
-    // 컴포넌트 언마운트 시 인터벌 정리
     return () => clearInterval(interval);
-  }, []);
-
-  // 각 박스의 배경 색을 토글 상태에 따라 동적으로 설정하는 함수
-  const getBoxBackgroundColor = (isEnabled) => {
-    return isEnabled ? '#FFFFFF' : '#767577'; // 켜졌을 때 흰색, 꺼졌을 때 회색
-  };
-
+  }, [alarmState, hasShownAlert]);
 
   return (
       <ImageBackground

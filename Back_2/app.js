@@ -1,6 +1,7 @@
 ﻿const noble = require('@abandonware/noble');
 const express = require('express');
 const os = require('os');
+const { LastStatus, LowData } = require('./database/mongoService');
 const { saveData, connectToMongoDB, saveCycleAndImbalance } = require('./database/mongoService');
 const { parseBmsData } = require('./utils/parser');
 const { calculateCycle, detectImbalance } = require('./utils/cycleCalculator');
@@ -147,7 +148,7 @@ app.get('/api/status', async (req, res) => {
         if (lastStatus) {
             res.json({
                 heartbeat: lastStatus.Heartbeat,
-                alarm: lastStatus.Alarm,
+                alarmState: lastStatus.Alarm,
             });
         } else {
             res.status(404).json({ message: 'No status data found' });
