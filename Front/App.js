@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ImageBackground, Image, Dimensions, Switch } from 'react-native';
+import { StyleSheet, Text, View, ImageBackground, Image, Dimensions } from 'react-native';
 import { BarChart } from 'react-native-chart-kit';
 const { width, height } = Dimensions.get('window');
+
 export default function App() {
-  const [isPlusRelayEnabled, setIsPlusRelayEnabled] = useState(false);
-  const [isMinusRelayEnabled, setIsMinusRelayEnabled] = useState(false);
   // 상태 값
   const [packVoltage, setPackVoltage] = useState('');
   const [current, setCurrent] = useState('');
@@ -12,13 +11,14 @@ export default function App() {
   const [temperature, setTemperature] = useState(''); // 배터리 온도값
   const [cyclevalue, setCyclevalue] = useState(''); // 사이클 횟수
   const [packVoltageHistory, setPackVoltageHistory] = useState([]);
-  const [isConnected, setIsConnected] = useState(false);  //연결이 된거야 만거야 함수
   const [xLabels, setXLabels] = useState([]);
+  const [heartbeat, setHeartbeat] = useState(''); // HEARTBEAT 값을 저장
+  const [alarmState, setAlarmState] = useState(false); // Alarm 상태를 저장 (true/false)
 
   useEffect(() => {
     const fetchCurrentData = async () => {
       try {
-        const response = await fetch('http://192.168.219.148:3000/api/data');
+        const response = await fetch('http://10.4.152.135:3000/api/data');
         const data = await response.json();
 
         if (response.ok) {
@@ -34,25 +34,9 @@ export default function App() {
       }
     };
 
-    const fetchRelayData = async () => {
-      try {
-        const response = await fetch('http://192.168.219.148:3000/api/data'); // 적절한 API 엔드포인트
-        const relayData = await response.json();
-
-        if (response.ok) {
-          setIsPlusRelayEnabled(relayData.chargeRelay || false); // chargeRelay 값을 설정
-          setIsMinusRelayEnabled(relayData.dischargeRelay || false); // dischargeRelay 값을 설정
-        } else {
-          console.error('Failed to fetch relay data:', relayData.message);
-        }
-      } catch (error) {
-        console.error('Error fetching relay data:', error);
-      }
-    };
-
     const fetchCycleCount = async () => {
       try {
-        const response = await fetch('http://192.168.219.148:3000/api/cycleCount');
+        const response = await fetch('http://10.4.152.135:3000/api/cycleCount');
         const cycleCount = await response.json();
 
         if (response.ok) {
@@ -67,7 +51,7 @@ export default function App() {
 
     const fetchAveragePackVoltage = async () => {
       try {
-        const response = await fetch('http://192.168.219.148:3000/api/averagePackVoltage');
+        const response = await fetch('http://10.4.152.135:3000/api/averagePackVoltage');
         const graphData = await response.json();
 
         if (response.ok && Array.isArray(graphData)) {
@@ -87,17 +71,31 @@ export default function App() {
         console.error('Error fetching average pack voltage:', error);
       }
     };
+    const heartbeatAlram = async () => {
+      try {
+        const response = await fetch('http://10.4.152.135:3000/api/status');
+        const data = await response.json();
+
+        if (response.ok) {
+          setHeartbeat(data.heartbeat || 0);
+        } else {
+          console.error('Failed to fetch status:', data.message);
+        }
+      } catch (error) {
+        console.error('Error fetching status:', error);
+      }
+    };
 
     fetchCurrentData();
     fetchAveragePackVoltage();
     fetchCycleCount();
-    fetchRelayData();
+    heartbeatAlram();
 
     const interval = setInterval(() => {
       fetchCurrentData();
       fetchAveragePackVoltage();
       fetchCycleCount();
-      fetchRelayData();
+      heartbeatAlram();
     }, 30000);
 
     // 컴포넌트 언마운트 시 인터벌 정리
@@ -108,20 +106,6 @@ export default function App() {
   const getBoxBackgroundColor = (isEnabled) => {
     return isEnabled ? '#FFFFFF' : '#767577'; // 켜졌을 때 흰색, 꺼졌을 때 회색
   };
-
-  useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        const response = await fetch('http://192.168.219.148:3000/api/data'); //연결확인 API따로 있음?
-        const data = await response.json();
-        setIsConnected(data.isConnected); // API에서 반환된 연결 상태 값 사용
-      } catch (error) {
-        console.error('Error checking connection:', error);
-      }
-    };
-
-    checkConnection();
-  }, []);
 
 
   return (
@@ -187,50 +171,19 @@ export default function App() {
           </View>
         </View>
 
-        {/* + 릴레이 박스 */}
-        <View style={[styles.plusbox, { backgroundColor: getBoxBackgroundColor(isPlusRelayEnabled) }]}>
-          <Text style={styles.textInsideBox}>&ensp;+릴레이</Text>
-          <Switch
-              trackColor={{ false: "#E9E9EA", true: "#34C458" }} // 토글 배경 색
-              thumbColor={isPlusRelayEnabled ? "#FFFFFF" : "#f4f3f4"} // 스위치 색
-              value={isPlusRelayEnabled} // 백엔드 상태 값
-              disabled={true} // 사용자가 스위치를 조작하지 못하도록 설정
-              style={styles.switchStyle}
-          />
+        {/*하트비트*/}
+        <View style={styles.heartbox}>
+          <Text style={styles.textInsideBox}>HEARTBEAT</Text>
+          <Text style={styles.heartbeatValue}>{heartbeat} </Text>
         </View>
-        {/* 상태 표시등 */}
+
         <View
             style={[
               styles.alarmbox,
-              { backgroundColor: isConnected ? '#FF0000' : '#767577' },
+              { backgroundColor: alarmState ? '#FF0000' : '#767577' },
             ]}
         />
-        <View style={styles.alarmbox}>
-          {/* Horizontal Grid Lines */}
-          <View style={styles.horizontalLine} />
-          <View style={[styles.horizontalLine, { top: '25%' }]} />
-          <View style={[styles.horizontalLine, { top: '50%' }]} />
-          <View style={[styles.horizontalLine, { top: '75%' }]} />
 
-          {/* Vertical Grid Lines */}
-          <View style={styles.verticalLine} />
-          <View style={[styles.verticalLine, { left: '25%' }]} />
-          <View style={[styles.verticalLine, { left: '50%' }]} />
-          <View style={[styles.verticalLine, { left: '75%' }]} />
-        </View>
-
-
-        {/* - 릴레이 박스 */}
-        <View style={[styles.minusbox, { backgroundColor: getBoxBackgroundColor(isMinusRelayEnabled) }]}>
-          <Text style={styles.textInsideBox}>&ensp;-릴레이</Text>
-          <Switch
-              trackColor={{ false: "#E9E9EA", true: "#34C458" }} // 토글 배경 색
-              thumbColor={isMinusRelayEnabled ? "#FFFFFF" : "#f4f3f4"} // 스위치 색
-              value={isMinusRelayEnabled} // 백엔드 상태 값
-              disabled={true} // 사용자가 스위치를 조작하지 못하도록 설정
-              style={styles.switchStyle}
-          />
-        </View>
 
         {/* 배터리 온도 박스 */}
         <View style={styles.temperature}>
@@ -360,25 +313,25 @@ const styles = StyleSheet.create({
     marginTop: 20, // 그래프와 텍스트 사이의 간격
   },
   plusbox: {
-    width: width * 0.40,
-    height: height * 0.044,
+    width: width * 0.50,
+    height: height * 0.054,
     borderRadius: 10,
     position: 'absolute',
-    left: width * 0.02,
-    top: height * 0.765,
+    left: width * 0.05,
+    top: height * 0.759,
     justifyContent: 'flex-start',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     borderWidth: 3,
     flexDirection: 'row', // 텍스트와 스위치를 가로로 배치
   },
   alarmbox: {
-    width: height * 0.04, // 동그라미의 직경 설정 (높이를 기준으로 설정)
-    height: height * 0.04, // 동그라미의 직경 설정
+    width: height * 0.15, // 동그라미의 직경 설정 (높이를 기준으로 설정)
+    height: height * 0.05, // 동그라미의 직경 설정
     backgroundColor: '#767577', // 동그라미 색상 (예시: 금색)
     borderRadius: height * 0.025, // 반지름을 절반으로 설정하여 동그라미 모양으로
     position: 'absolute',
-    left: width * 0.456, // +릴레이와 -릴레이 박스 사이 중앙에 위치
-    top: height * 0.766, // y 위치는 동일하게 유지
+    left: width * 0.616, // +릴레이와 -릴레이 박스 사이 중앙에 위치
+    top: height * 0.762, // y 위치는 동일하게 유지
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
@@ -395,17 +348,25 @@ const styles = StyleSheet.create({
     width: 1,
     backgroundColor: '#000', // Line color
   },
-  minusbox: {
-    width: width * 0.40,
-    height: height * 0.044,
+  heartbox: {
+    width: width * 0.50,
+    height: height * 0.06, // 적절한 높이로 설정
+    backgroundColor: '#FFFFFF', // 흰색 배경
     borderRadius: 10,
     position: 'absolute',
-    left: width * 0.570,
-    top: height * 0.765,
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
+    left: width * 0.05,
+    top: height * 0.759,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 3,
-    flexDirection: 'row', // 텍스트와 스위치를 가로로 배치
+    flexDirection: 'row', // 텍스트와 데이터를 가로로 배치
+    padding: 10, // 내부 여백 추가
+  },
+  heartbeatValue: {
+    fontSize: 18,          // 텍스트 크기
+    fontWeight: "700",     // 굵은 글씨
+    color: "#333",         // 텍스트 색상
+    marginLeft: 12,        // 텍스트와 제목 간격
   },
   //온도 박스 스타일
   temperature: {
@@ -438,8 +399,6 @@ const styles = StyleSheet.create({
     marginRight: 3, // 텍스트와의 간격
   },
 
-
-
   cyclebox: {
     width: width * 0.95,
     height: height * 0.044,
@@ -462,10 +421,5 @@ const styles = StyleSheet.create({
     marginRight: 10,   // 오른쪽 여백 추가 (선택 사항)
   },
 
-  //스위치 스타일
-  switchStyle: {
-    marginTop: -8,
-    marginLeft: 45, // 오른쪽에 배치
-  },
 });
 
