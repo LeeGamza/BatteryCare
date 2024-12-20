@@ -3,7 +3,6 @@ const { LowData, LastStatus } = require('./schemas');
 const { detectImbalance } = require('../utils/cycleCalculator'); // 불균형 감지 함수 가져오기
 
 const MONGO_URI = 'mongodb+srv://admin:admin@cluster0.6m1uhwl.mongodb.net/';
-
 async function connectToMongoDB() {
     try {
         await mongoose.connect(MONGO_URI);
@@ -81,4 +80,4 @@ async function saveData(parsedData) {
     await saveLowData(parsedData);   // 시간별 데이터 저장
 }
 
-module.exports = { connectToMongoDB, saveData, saveCycleAndImbalance };
+module.exports = { connectToMongoDB, saveData, saveCycleAndImbalance, LowData, LastStatus };
